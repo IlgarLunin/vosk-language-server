@@ -1,0 +1,3 @@
+[submodule "thirdparty/vosk-api"]
+	path = thirdparty/vosk-api
+	url = git@github.com:alphacep/vosk-api.git

@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>vosk.ico</file>
+        <file>style.css</file>
+    </qresource>
+</RCC>
