@@ -1,17 +1,17 @@
 #include "application.h"
 
 #include <QApplication>
+#include <QStyleFactory>
 #include <QFile>
 
 int main(int argc, char *argv[])
 {
+    QApplication::setOrganizationName("VLS");
+    QApplication::setApplicationName("vls");
+    QApplication::setApplicationVersion("1.0");
     QApplication a(argc, argv);
 
-    QFile styleFile(":/style.css");
-    styleFile.open(QFile::ReadOnly);
-    QString style = styleFile.readAll();
-    styleFile.close();
-    a.setStyleSheet(style);
+    a.setStyle(QStyleFactory::create("Fusion"));
 
     Application w;
     w.show();

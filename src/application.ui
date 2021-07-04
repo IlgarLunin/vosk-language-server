@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>487</width>
-    <height>282</height>
+    <width>532</width>
+    <height>362</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,11 +23,120 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="QPushButton" name="pbRunCode">
+     <layout class="QFormLayout" name="formLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="addressLabel">
         <property name="text">
-         <string>Run code</string>
+         <string>Address</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="addressLineEdit">
+        <property name="text">
+         <string>0.0.0.0</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="portLabel">
+        <property name="text">
+         <string>Port</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QSpinBox" name="portSpinBox">
+        <property name="maximum">
+         <number>65535</number>
+        </property>
+        <property name="value">
+         <number>8080</number>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="sampleRateLabel">
+        <property name="text">
+         <string>Sample rate (Hz)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QSpinBox" name="sampleRateSpinBox">
+        <property name="minimum">
+         <number>8000</number>
+        </property>
+        <property name="maximum">
+         <number>48000</number>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="numThreadsLabel">
+        <property name="text">
+         <string>Num threads</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QSpinBox" name="numThreadsSpinBox">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>1024</number>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="maxAlternativesLabel">
+        <property name="text">
+         <string>Max alternatives</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QSpinBox" name="maxAlternativesSpinBox"/>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="showWordsLabel">
+        <property name="text">
+         <string>Show words</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QCheckBox" name="showWordsCheckBox"/>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="modelPathLabel">
+        <property name="text">
+         <string>Model path</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QLineEdit" name="modelPathLineEdit"/>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QPlainTextEdit" name="leLog"/>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="pbStart">
+        <property name="text">
+         <string>Start</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pbStop">
+        <property name="text">
+         <string>Stop</string>
         </property>
        </widget>
       </item>
@@ -40,7 +149,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>487</width>
+     <width>532</width>
      <height>20</height>
     </rect>
    </property>

@@ -46,7 +46,7 @@ void fail(beast::error_code ec, char const *what)
     std::cerr << what << ": " << ec.message() << "\n";
 }
 
-// Echoes back all received WebSocket messages
+
 class session : public std::enable_shared_from_this<session>
 {
     struct Chunk
@@ -78,8 +78,7 @@ public:
     }
 
     // Get on the correct executor
-    void
-    run()
+    void run()
     {
         // We need to be executing within a strand to perform async operations
         // on the I/O objects in this session. Although not strictly necessary
@@ -92,8 +91,7 @@ public:
     }
 
     // Start the asynchronous operation
-    void
-    on_run()
+    void on_run()
     {
         // Set suggested timeout settings for the websocket
         ws_.set_option(
@@ -113,6 +111,7 @@ public:
             beast::bind_front_handler(
                 &session::on_accept,
                 shared_from_this()));
+
     }
 
     void
@@ -125,8 +124,7 @@ public:
         do_read();
     }
 
-    void
-    do_read()
+    void do_read()
     {
         // Read a message into our buffer
         ws_.async_read(
@@ -152,10 +150,7 @@ public:
         }
     }
 
-    void
-    on_read(
-        beast::error_code ec,
-        std::size_t bytes_transferred)
+    void on_read(beast::error_code ec, std::size_t bytes_transferred)
     {
         boost::ignore_unused(bytes_transferred);
 
@@ -163,15 +158,9 @@ public:
         if (ec == websocket::error::closed)
             return;
 
+
         if (ec)
             fail(ec, "read");
-
-        if (chunk_.stop)
-        {
-            ws_.close(beast::websocket::close_code::normal);
-
-            return;
-        }
 
         const char *buf = boost::asio::buffer_cast<const char *>(buffer_.cdata());
         int len = static_cast<int>(buffer_.size());
@@ -186,8 +175,7 @@ public:
                 shared_from_this()));
     }
 
-    void
-    on_write(
+    void on_write(
         beast::error_code ec,
         std::size_t bytes_transferred)
     {
@@ -247,8 +235,7 @@ public:
         }
 
         // Start listening for connections
-        acceptor_.listen(
-            net::socket_base::max_listen_connections, ec);
+        acceptor_.listen(net::socket_base::max_listen_connections, ec);
         if (ec)
         {
             fail(ec, "listen");
@@ -264,8 +251,7 @@ public:
     }
 
 private:
-    void
-    do_accept()
+    void do_accept()
     {
         // The new connection gets its own strand
         acceptor_.async_accept(
@@ -275,8 +261,7 @@ private:
                 shared_from_this()));
     }
 
-    void
-    on_accept(beast::error_code ec, tcp::socket socket)
+    void on_accept(beast::error_code ec, tcp::socket socket)
     {
         if (ec)
         {
@@ -294,63 +279,60 @@ private:
 };
 
 //------------------------------------------------------------------------------
-
 int main(int argc, char *argv[])
 {
     std::string _address = "0.0.0.0";
-    unsigned int _port = 8080;
-    unsigned int _num_threads = 1;
-    std::string _model_path = "model";
-
+    int _port = 8080;
+    int _num_threads = 1;
+    int _sample_rate = 16000;
+    int _max_alternatives = 0;
+    bool _show_words = false;
+    std::string _model_path = "";
 
     po::options_description cli_args("server parameters");
+    std::stringstream usage;
+    usage << "Usage:\n\t";
+    usage << "asr_server -m \"D:/PATH/TO/MODEL\"\n\t";
+
     cli_args.add_options()
             // First parameter describes option name/short name
             // The second is parameter to option
             // The third is description
-            ("help,?", "print usage message")
-            ("address,a", po::value<std::string>(&_address), "server address")
-            ("host,h", po::value<unsigned int>(&_port), "server port")
-            ("threads,t", po::value<unsigned int>(&_num_threads), "number of threads")
-            ("model-path,mp", po::value<std::string>(&_model_path), "path to model")
+            ("help,?", usage.str().c_str())
+            ("address,a", po::value<std::string>(&_address)->default_value(_address), "server address")
+            ("port,p", po::value<int>(&_port)->default_value(_port), "server port")
+            ("threads,t", po::value<int>(&_num_threads)->default_value(_num_threads), "number of threads")
+            ("sample-rate,s", po::value<int>(&_sample_rate)->default_value(_sample_rate), "audio stream sample rate")
+            ("max-alternatives,l", po::value<int>(&_max_alternatives)->default_value(_max_alternatives), "maximum number of alternative variants")
+            ("show-words,w", po::value<bool>(&_show_words)->default_value(_show_words), "show words")
+            ("model-path,m", po::value<std::string>(&_model_path)->required(), "path to model")
             ;
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, cli_args), vm);
 
-    if(vm.count("help"))
+    if(vm.count("help") || argc == 0 || vm.count("model-path") == 0)
     {
-        std::cout << "Usage: asr_server <address> <port> <threads> <model-path>\n"
-                  << "Example:\n"
-                  << "    asr_server 0.0.0.0 8080 1 model_path\n";
+        cli_args.print(std::cout, 0);
         return EXIT_SUCCESS;
 
     }
 
-    auto const address = net::ip::make_address(argv[1]);
-    auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
-    auto const threads = std::max<int>(1, std::atoi(argv[3]));
-    auto const model_path = argv[4];
-    model = vosk_model_new(model_path);
+    auto const port = vm["port"].as<int>();
+    auto const threads = std::max<int>(1, vm["threads"].as<int>());
+    model = vosk_model_new(vm["model-path"].as<std::string>().c_str());
 
     Args args;
-    if (const char *env_p = std::getenv("VOSK_SAMPLE_RATE"))
-    {
-        args.sample_rate = std::stof(env_p);
-    }
-    if (const char *env_p = std::getenv("VOSK_ALTERNATIVES"))
-    {
-        args.max_alternatives = std::stoi(env_p);
-    }
-    if (const char *env_p = std::getenv("VOSK_SHOW_WORDS"))
-    {
-        args.show_words = strcmp(env_p, "True") == 0;
-    }
-    // The io_context is required for all I/O
-    net::io_context ioc{threads};
+    args.sample_rate = vm["sample-rate"].as<int>();
+    args.max_alternatives = vm["max-alternatives"].as<int>();
+    args.show_words = vm["show-words"].as<bool>();
 
+    // The io_context is required for all I/O
+    net::io_context ioc {threads};
     // Create and launch a listening port
-    std::make_shared<listener>(ioc, tcp::endpoint{address, port}, args)->run();
+    std::make_shared<listener>(ioc, tcp::endpoint{net::ip::make_address(_address), (unsigned short)port}, args)->run();
+    // prevent event loop from exiting
+    // boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work = boost::asio::make_work_guard(ioc.get_executor());
 
     // Run the I/O service on the requested number of threads
     std::vector<std::thread> v;

@@ -35,8 +35,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
     )
 else()
-    add_executable(vls WIN32
-        ${PROJECT_SOURCES} ${APP_ICON_RESOURCE_WINDOWS}
+    add_executable(vls ${PROJECT_SOURCES} ${APP_ICON_RESOURCE_WINDOWS}
     )
 endif()
 

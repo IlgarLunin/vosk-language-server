@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.15.1, 2021-07-03T23:03:26. -->
+<!-- Written by QtCreator 4.15.1, 2021-07-04T19:31:59. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -345,6 +345,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">asr_server</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">CMakeProjectManager.CMakeRunConfiguration.asr_server</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">asr_server</value>
+    <value type="QString" key="RunConfiguration.Arguments">-m &quot;D:\Programs\VoskModels\vosk-model-en-us-aspire&quot;</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
