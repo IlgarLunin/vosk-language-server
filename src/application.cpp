@@ -3,6 +3,7 @@
 #include <QSettings>
 
 #include "application.h"
+#include "vls_common.h"
 #include "./ui_application.h"
 
 
@@ -25,6 +26,21 @@ Application::Application(QWidget *parent)
     syncUIWithProcessState();
     ui->leLog->setReadOnly(true);
 
+    m_QuitAction = new QAction(this);
+    m_QuitAction->setText("Quit");
+    trayIconMenu = new QMenu(this);
+    trayIconMenu->addAction(m_QuitAction);
+    connect(m_QuitAction, &QAction::triggered, this, &Application::onQuit);
+
+    trayIcon = new QSystemTrayIcon(this);
+    connect(trayIcon, &QSystemTrayIcon::activated, this, &Application::on_trayIconActivated);
+    trayIcon->setIcon(QIcon(":/vosk.ico"));
+    trayIcon->setContextMenu(trayIconMenu);
+    trayIcon->show();
+
+    setWindowTitle(QString("Vosk Language Server %1.%2").arg(VLS::VLS_VERSION_MAJOR).arg(VLS::VLS_VERSION_MINOR));
+
+    readSettings();
 }
 
 Application::~Application()
@@ -39,13 +55,35 @@ bool Application::isRunning()
 
 void Application::writeSettings()
 {
-    QSettings settings(QApplication::applicationDirPath(), QSettings::IniFormat);
+    QSettings settings(QSettings::IniFormat,
+                       QSettings::UserScope,
+                       QApplication::organizationName(),
+                       QApplication::applicationName());
+
+    settings.setValue("address", ui->addressLineEdit->text());
+    settings.setValue("port", ui->portSpinBox->value());
+    settings.setValue("sample_rate", ui->sampleRateSpinBox->value());
+    settings.setValue("threads", ui->numThreadsSpinBox->value());
+    settings.setValue("max_alternatives", ui->maxAlternativesSpinBox->value());
+    settings.setValue("show_words", ui->showWordsCheckBox->isChecked());
     settings.setValue("model_path", ui->modelPathLineEdit->text());
+
+    settings.sync();
 }
 
 void Application::readSettings()
 {
-    QSettings settings(QSettings::IniFormat, QSettings::Scope::UserScope, "VLS");
+    QSettings settings(QSettings::IniFormat,
+                       QSettings::UserScope,
+                       QApplication::organizationName(),
+                       QApplication::applicationName());
+
+    ui->addressLineEdit->setText(settings.value("address", "0.0.0.0").toString());
+    ui->portSpinBox->setValue(settings.value("port", 8080).toInt());
+    ui->sampleRateSpinBox->setValue(settings.value("sample_rate", 16000).toInt());
+    ui->numThreadsSpinBox->setValue(settings.value("threads", 1).toInt());
+    ui->maxAlternativesSpinBox->setValue(settings.value("max_alternatives", 0).toInt());
+    ui->showWordsCheckBox->setChecked(settings.value("show_words").toBool());
     ui->modelPathLineEdit->setText(settings.value("model_path").toString());
 }
 
@@ -121,6 +159,42 @@ void Application::on_clearLog()
 void Application::on_hearBeat()
 {
     syncUIWithProcessState();
+}
+
+void Application::closeEvent(QCloseEvent *event)
+{
+#ifdef Q_OS_MACOS
+    if (!event->spontaneous() || !isVisible()) {
+        return;
+    }
+#endif
+    if (trayIcon->isVisible()) {
+        hide();
+        event->ignore();
+    } else {
+        writeSettings();
+    }
+}
+
+void Application::on_trayIconActivated(QSystemTrayIcon::ActivationReason reason)
+{
+    switch (reason)
+        {
+            case QSystemTrayIcon::Trigger:
+            case QSystemTrayIcon::DoubleClick:
+                showNormal();
+                activateWindow();
+                break;
+            case QSystemTrayIcon::MiddleClick:
+            default:
+            ;
+    }
+}
+
+void Application::onQuit()
+{
+    writeSettings();
+    qApp->quit();
 }
 
 void Application::syncUIWithProcessState()

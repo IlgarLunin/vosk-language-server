@@ -22,8 +22,10 @@ set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/resources/winresource
 set(PROJECT_SOURCES
     main.cpp
     src/application.ui
+    src/vls_common.cpp
     src/application.cpp
     include/application.h
+    include/vls_common.h
 )
 
 # add resources

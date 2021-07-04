@@ -4,6 +4,7 @@
 #include <QPointer>
 #include <QProcess>
 #include <QTimer>
+#include <QSystemTrayIcon>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Application; }
@@ -18,6 +19,7 @@ public:
     ~Application();
 
     bool isRunning();
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
 
@@ -34,6 +36,9 @@ private slots:
     void on_clearLog();
 
     void on_hearBeat();
+    void on_trayIconActivated(QSystemTrayIcon::ActivationReason reason);
+
+    void onQuit();
 
 private:
     void syncUIWithProcessState();
@@ -42,5 +47,8 @@ private:
     Ui::Application *ui;
     QPointer<QProcess> m_currentProcess;
     QAction* m_actionClearLog;
+    QMenu* trayIconMenu;
+    QAction* m_QuitAction;
     QTimer m_hearbeatTimer;
+    QSystemTrayIcon* trayIcon;
 };

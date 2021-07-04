@@ -6,9 +6,9 @@
 
 int main(int argc, char *argv[])
 {
-    QApplication::setOrganizationName("VLS");
+    QApplication::setOrganizationName("Alphacephei");
     QApplication::setApplicationName("vls");
-    QApplication::setApplicationVersion("1.0");
+    QApplication::setApplicationVersion("2021.1");
     QApplication a(argc, argv);
 
     a.setStyle(QStyleFactory::create("Fusion"));
