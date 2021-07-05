@@ -37,6 +37,7 @@ private slots:
 
     void on_hearBeat();
     void on_trayIconActivated(QSystemTrayIcon::ActivationReason reason);
+    void on_trayMessageClicked();
 
     void onQuit();
 

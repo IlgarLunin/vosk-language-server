@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>532</width>
-    <height>362</height>
+    <height>385</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,6 +22,55 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <widget class="QGroupBox" name="groupBox">
+      <property name="title">
+       <string>Settings</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <property name="spacing">
+        <number>1</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <layout class="QFormLayout" name="formLayout_2">
+         <item row="0" column="0">
+          <widget class="QLabel" name="autoStartLabel">
+           <property name="text">
+            <string>Auto start</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QCheckBox" name="autoStartCheckBox">
+           <property name="toolTip">
+            <string>Try to execute model on startup (using current settings)</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="Line" name="line">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
     <item>
      <layout class="QFormLayout" name="formLayout">
       <item row="0" column="0">
@@ -144,6 +193,7 @@
     </item>
    </layout>
   </widget>
+  <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
@@ -157,26 +207,13 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionPreferences"/>
-   </widget>
-   <widget class="QMenu" name="menuHelp">
-    <property name="title">
-     <string>Help</string>
-    </property>
-    <addaction name="actionAbout"/>
+    <addaction name="actionExit"/>
    </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuHelp"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionPreferences">
+  <action name="actionExit">
    <property name="text">
-    <string>Preferences</string>
-   </property>
-  </action>
-  <action name="actionAbout">
-   <property name="text">
-    <string>About</string>
+    <string>Exit</string>
    </property>
   </action>
  </widget>

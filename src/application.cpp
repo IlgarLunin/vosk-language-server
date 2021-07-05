@@ -31,6 +31,7 @@ Application::Application(QWidget *parent)
     trayIconMenu = new QMenu(this);
     trayIconMenu->addAction(m_QuitAction);
     connect(m_QuitAction, &QAction::triggered, this, &Application::onQuit);
+    connect(ui->actionExit, &QAction::triggered, this, &Application::onQuit);
 
     trayIcon = new QSystemTrayIcon(this);
     connect(trayIcon, &QSystemTrayIcon::activated, this, &Application::on_trayIconActivated);
@@ -41,6 +42,14 @@ Application::Application(QWidget *parent)
     setWindowTitle(QString("Vosk Language Server %1.%2").arg(VLS::VLS_VERSION_MAJOR).arg(VLS::VLS_VERSION_MINOR));
 
     readSettings();
+    connect(trayIcon, &QSystemTrayIcon::messageClicked, this, &Application::on_trayMessageClicked);
+    trayIcon->showMessage("", "Vls is running in background", QSystemTrayIcon::NoIcon, 300);
+
+    if(ui->autoStartCheckBox->isChecked())
+    {
+        on_pbStart_clicked();
+    }
+
 }
 
 Application::~Application()
@@ -68,6 +77,10 @@ void Application::writeSettings()
     settings.setValue("show_words", ui->showWordsCheckBox->isChecked());
     settings.setValue("model_path", ui->modelPathLineEdit->text());
 
+    settings.beginGroup("gui");
+    settings.setValue("auto_start", ui->autoStartCheckBox->isChecked());
+    settings.endGroup();
+
     settings.sync();
 }
 
@@ -85,6 +98,10 @@ void Application::readSettings()
     ui->maxAlternativesSpinBox->setValue(settings.value("max_alternatives", 0).toInt());
     ui->showWordsCheckBox->setChecked(settings.value("show_words").toBool());
     ui->modelPathLineEdit->setText(settings.value("model_path").toString());
+
+    settings.beginGroup("gui");
+    ui->autoStartCheckBox->setChecked(settings.value("auto_start").toBool());
+    settings.endGroup();
 }
 
 
@@ -156,6 +173,7 @@ void Application::on_clearLog()
     ui->leLog->clear();
 }
 
+
 void Application::on_hearBeat()
 {
     syncUIWithProcessState();
@@ -189,6 +207,12 @@ void Application::on_trayIconActivated(QSystemTrayIcon::ActivationReason reason)
             default:
             ;
     }
+}
+
+void Application::on_trayMessageClicked()
+{
+    showNormal();
+    activateWindow();
 }
 
 void Application::onQuit()
