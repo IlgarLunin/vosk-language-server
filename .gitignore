@@ -72,3 +72,4 @@ Thumbs.db
 
 build/
 install/
+vosk-language-server*
