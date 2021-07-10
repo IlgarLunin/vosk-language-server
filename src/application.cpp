@@ -37,7 +37,7 @@ Application::Application(QWidget *parent)
 
     trayIcon = new QSystemTrayIcon(this);
     connect(trayIcon, &QSystemTrayIcon::activated, this, &Application::on_trayIconActivated);
-    trayIcon->setIcon(QIcon(":/vosk.ico"));
+    trayIcon->setIcon(QIcon(":/icon.ico"));
     trayIcon->setContextMenu(trayIconMenu);
     trayIcon->show();
 
