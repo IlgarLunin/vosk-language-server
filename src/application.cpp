@@ -1,6 +1,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QSettings>
+#include <QDesktopServices>
 
 #include "application.h"
 #include "vls_common.h"
@@ -32,6 +33,7 @@ Application::Application(QWidget *parent)
     trayIconMenu->addAction(m_QuitAction);
     connect(m_QuitAction, &QAction::triggered, this, &Application::onQuit);
     connect(ui->actionExit, &QAction::triggered, this, &Application::onQuit);
+    connect(ui->actionDownload_models, &QAction::triggered, this, &Application::on_downloadModels);
 
     trayIcon = new QSystemTrayIcon(this);
     connect(trayIcon, &QSystemTrayIcon::activated, this, &Application::on_trayIconActivated);
@@ -144,6 +146,11 @@ void Application::on_pbStop_clicked()
         delete m_currentProcess;
         m_currentProcess.clear();
     }
+}
+
+void Application::on_downloadModels()
+{
+    QDesktopServices::openUrl(QUrl("https://alphacephei.com/vosk/models"));
 }
 
 void Application::on_processErrorOccurred(QProcess::ProcessError err)

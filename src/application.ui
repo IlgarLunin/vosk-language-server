@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>532</width>
-    <height>385</height>
+    <height>408</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -207,6 +207,7 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionDownload_models"/>
     <addaction name="actionExit"/>
    </widget>
    <addaction name="menuFile"/>
@@ -214,6 +215,11 @@
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionDownload_models">
+   <property name="text">
+    <string>Download models</string>
    </property>
   </action>
  </widget>

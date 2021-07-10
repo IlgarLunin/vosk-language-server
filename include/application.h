@@ -28,6 +28,7 @@ private slots:
 
     void on_pbStart_clicked();
     void on_pbStop_clicked();
+    void on_downloadModels();
 
     void on_processErrorOccurred(QProcess::ProcessError err);
     void on_processStateChanged(QProcess::ProcessState st);
