@@ -60,11 +60,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${Boost_LIBRARY_DIR})
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-
-#set(Boost_DEBUG 1)
-set(_boost_INCLUDE_SEARCH_DIRS "C:/boost/include")
-set(_boost_PATH_SUFFIXES "boost")
-
 find_package(Boost 1.77.0 COMPONENTS date_time program_options REQUIRED)
 
 
