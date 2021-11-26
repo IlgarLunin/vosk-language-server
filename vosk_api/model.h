@@ -31,6 +31,7 @@
 #include "nnet3/nnet-utils.h"
 #include "rnnlm/rnnlm-utils.h"
 #include "rnnlm/rnnlm-lattice-rescoring.h"
+#include <atomic>
 
 using namespace kaldi;
 using namespace std;
@@ -65,13 +66,13 @@ protected:
     string std_fst_rxfilename_;
     string final_ie_rxfilename_;
     string mfcc_conf_rxfilename_;
+    string fbank_conf_rxfilename_;
     string global_cmvn_stats_rxfilename_;
     string pitch_conf_rxfilename_;
 
     string rnnlm_word_feats_rxfilename_;
     string rnnlm_feat_embedding_rxfilename_;
     string rnnlm_config_rxfilename_;
-    string rnnlm_lm_fst_rxfilename_;
     string rnnlm_lm_rxfilename_;
 
     kaldi::OnlineEndpointConfig endpoint_config_;
@@ -91,15 +92,15 @@ protected:
     fst::Fst<fst::StdArc> *hcl_fst_ = nullptr;
     fst::Fst<fst::StdArc> *g_fst_ = nullptr;
 
-    fst::VectorFst<fst::StdArc> *std_lm_fst_ = nullptr;
+    fst::VectorFst<fst::StdArc> *graph_lm_fst_ = nullptr;
     kaldi::ConstArpaLm const_arpa_;
 
     kaldi::rnnlm::RnnlmComputeStateComputationOptions rnnlm_compute_opts;
     CuMatrix<BaseFloat> word_embedding_mat;
-    fst::VectorFst<fst::StdArc> *rnnlm_lm_fst_ = NULL;
     kaldi::nnet3::Nnet rnnlm;
+    bool rnnlm_enabled_ = false;
 
-    int ref_cnt_;
+    std::atomic<int> ref_cnt_;
 };
 
 #endif /* VOSK_MODEL_H */

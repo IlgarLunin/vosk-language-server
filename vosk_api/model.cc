@@ -108,14 +108,21 @@ Model::Model(const char *model_path) : model_path_str_(model_path) {
     SetLogHandler(KaldiLogHandler);
 
     struct stat buffer;
-    string am_path = model_path_str_ + "/am/final.mdl";
-    if (stat(am_path.c_str(), &buffer) == 0) {
-         ConfigureV2();
+    string am_v2_path = model_path_str_ + "/am/final.mdl";
+    string model_conf_v2_path = model_path_str_ + "/conf/model.conf";
+    string am_v1_path = model_path_str_ + "/final.mdl";
+    string mfcc_v1_path = model_path_str_ + "/mfcc.conf";
+    if (stat(am_v2_path.c_str(), &buffer) == 0 && stat(model_conf_v2_path.c_str(), &buffer) == 0) {
+        ConfigureV2();
+        ReadDataFiles();
+    } else if (stat(am_v1_path.c_str(), &buffer) == 0 && stat(mfcc_v1_path.c_str(), &buffer) == 0) {
+        ConfigureV1();
+        ReadDataFiles();
     } else {
-         ConfigureV1();
+        KALDI_ERR << "Folder '" << model_path_str_ << "' does not contain model files. " <<
+                     "Make sure you specified the model path properly in Model constructor. " <<
+                     "If you are not sure about relative path, use absolute path specification.";
     }
-
-    ReadDataFiles();
 
     ref_cnt_ = 1;
 }
@@ -161,13 +168,13 @@ void Model::ConfigureV1()
     std_fst_rxfilename_ = model_path_str_ + "/rescore/G.fst";
     final_ie_rxfilename_ = model_path_str_ + "/ivector/final.ie";
     mfcc_conf_rxfilename_ = model_path_str_ + "/mfcc.conf";
+    fbank_conf_rxfilename_ = model_path_str_ + "/fbank.conf";
     global_cmvn_stats_rxfilename_ = model_path_str_ + "/global_cmvn.stats";
     pitch_conf_rxfilename_ = model_path_str_ + "/pitch.conf";
     rnnlm_word_feats_rxfilename_ = model_path_str_ + "/rnnlm/word_feats.txt";
     rnnlm_feat_embedding_rxfilename_ = model_path_str_ + "/rnnlm/feat_embedding.final.mat";
     rnnlm_config_rxfilename_ = model_path_str_ + "/rnnlm/special_symbol_opts.conf";
     rnnlm_lm_rxfilename_ = model_path_str_ + "/rnnlm/final.raw";
-    rnnlm_lm_fst_rxfilename_ = model_path_str_ + "/rescore/G.fst";
 }
 
 void Model::ConfigureV2()
@@ -190,13 +197,13 @@ void Model::ConfigureV2()
     std_fst_rxfilename_ = model_path_str_ + "/rescore/G.fst";
     final_ie_rxfilename_ = model_path_str_ + "/ivector/final.ie";
     mfcc_conf_rxfilename_ = model_path_str_ + "/conf/mfcc.conf";
+    fbank_conf_rxfilename_ = model_path_str_ + "/conf/fbank.conf";
     global_cmvn_stats_rxfilename_ = model_path_str_ + "/am/global_cmvn.stats";
     pitch_conf_rxfilename_ = model_path_str_ + "/conf/pitch.conf";
     rnnlm_word_feats_rxfilename_ = model_path_str_ + "/rnnlm/word_feats.txt";
     rnnlm_feat_embedding_rxfilename_ = model_path_str_ + "/rnnlm/feat_embedding.final.mat";
     rnnlm_config_rxfilename_ = model_path_str_ + "/rnnlm/special_symbol_opts.conf";
     rnnlm_lm_rxfilename_ = model_path_str_ + "/rnnlm/final.raw";
-    rnnlm_lm_fst_rxfilename_ = model_path_str_ + "/rescore/G.fst";
 }
 
 void Model::ReadDataFiles()
@@ -208,9 +215,17 @@ void Model::ReadDataFiles()
          " lattice-beam=" << nnet3_decoding_config_.lattice_beam;
     KALDI_LOG << "Silence phones " << endpoint_config_.silence_phones;
 
-    feature_info_.feature_type = "mfcc";
-    ReadConfigFromFile(mfcc_conf_rxfilename_, &feature_info_.mfcc_opts);
-    feature_info_.mfcc_opts.frame_opts.allow_downsample = true; // It is safe to downsample
+    if (stat(mfcc_conf_rxfilename_.c_str(), &buffer) == 0) {
+        feature_info_.feature_type = "mfcc";
+        ReadConfigFromFile(mfcc_conf_rxfilename_, &feature_info_.mfcc_opts);
+        feature_info_.mfcc_opts.frame_opts.allow_downsample = true; // It is safe to downsample
+    } else if (stat(fbank_conf_rxfilename_.c_str(), &buffer) == 0) {
+        feature_info_.feature_type = "fbank";
+        ReadConfigFromFile(fbank_conf_rxfilename_, &feature_info_.fbank_opts);
+        feature_info_.fbank_opts.frame_opts.allow_downsample = true; // It is safe to downsample
+    } else {
+        KALDI_ERR << "Failed to find feature config file";
+    }
 
     feature_info_.silence_weighting_config.silence_weight = 1e-3;
     feature_info_.silence_weighting_config.silence_phones_str = endpoint_config_.silence_phones;
@@ -289,12 +304,19 @@ void Model::ReadDataFiles()
         winfo_ = new kaldi::WordBoundaryInfo(opts, winfo_rxfilename_);
     }
 
+    if (stat(carpa_rxfilename_.c_str(), &buffer) == 0) {
+
+        KALDI_LOG << "Loading subtract G.fst model from " << std_fst_rxfilename_;
+        graph_lm_fst_ = fst::ReadAndPrepareLmFst(std_fst_rxfilename_);
+        KALDI_LOG << "Loading CARPA model from " << carpa_rxfilename_;
+        ReadKaldiObject(carpa_rxfilename_, &const_arpa_);
+    }
+
     // RNNLM Rescoring
     if (stat(rnnlm_lm_rxfilename_.c_str(), &buffer) == 0) {
         KALDI_LOG << "Loading RNNLM model from " << rnnlm_lm_rxfilename_;
 
         ReadKaldiObject(rnnlm_lm_rxfilename_, &rnnlm);
-        rnnlm_lm_fst_ = fst::ReadAndPrepareLmFst(rnnlm_lm_fst_rxfilename_);
         Matrix<BaseFloat> feature_embedding_mat;
         ReadKaldiObject(rnnlm_feat_embedding_rxfilename_, &feature_embedding_mat);
         SparseMatrix<BaseFloat> word_feature_mat;
@@ -312,29 +334,21 @@ void Model::ReadDataFiles()
 
         ReadConfigFromFile(rnnlm_config_rxfilename_, &rnnlm_compute_opts);
 
-    } else if (stat(carpa_rxfilename_.c_str(), &buffer) == 0) {
-
-        KALDI_LOG << "Loading CARPA model from " << carpa_rxfilename_;
-        std_lm_fst_ = fst::ReadFstKaldi(std_fst_rxfilename_);
-        fst::Project(std_lm_fst_, fst::ProjectType::OUTPUT);
-        if (std_lm_fst_->Properties(fst::kILabelSorted, true) == 0) {
-            fst::ILabelCompare<fst::StdArc> ilabel_comp;
-            fst::ArcSort(std_lm_fst_, ilabel_comp);
-        }
-        ReadKaldiObject(carpa_rxfilename_, &const_arpa_);
+        rnnlm_enabled_ = true;
     }
+
 }
 
 void Model::Ref() 
 {
-    ref_cnt_++;
+    std::atomic_fetch_add_explicit(&ref_cnt_, 1, std::memory_order_relaxed);
 }
 
 void Model::Unref() 
 {
-    ref_cnt_--;
-    if (ref_cnt_ == 0) {
-        delete this;
+    if (std::atomic_fetch_sub_explicit(&ref_cnt_, 1, std::memory_order_release) == 1) {
+         std::atomic_thread_fence(std::memory_order_acquire);
+         delete this;
     }
 }
 
@@ -356,5 +370,5 @@ Model::~Model() {
     delete hclg_fst_;
     delete hcl_fst_;
     delete g_fst_;
-    delete std_lm_fst_;
+    delete graph_lm_fst_;
 }

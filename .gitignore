@@ -31,7 +31,6 @@ ui_*.h
 qrc_*.cpp
 Thumbs.db
 *.res
-*.rc
 /.qmake.cache
 /.qmake.stash
 
@@ -73,3 +72,5 @@ Thumbs.db
 build/
 install/
 vosk-language-server*
+CMakeLists.txt.user.3a17303
+CMakeLists.txt.user

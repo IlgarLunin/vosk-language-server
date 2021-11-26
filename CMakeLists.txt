@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.15.0)
 
 project(vls VERSION 0.1 LANGUAGES CXX)
 
@@ -49,20 +49,25 @@ if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(vls)
 endif()
 
+
 install(TARGETS vls RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 
 ######### build server cli ###################
-
-set(Boost_INCLUDE_DIR "$ENV{Boost_INCLUDE_DIR}")
-set(Boost_LIBRARY_DIR "$ENV{Boost_LIBRARY_DIR}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${Boost_LIBRARY_DIR})
 
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.76.0 COMPONENTS date_time program_options)
+
+#set(Boost_DEBUG 1)
+set(_boost_INCLUDE_SEARCH_DIRS "C:/boost/include")
+set(_boost_PATH_SUFFIXES "boost")
+
+find_package(Boost 1.77.0 COMPONENTS date_time program_options REQUIRED)
+
+
 if(Boost_FOUND)
     file(GLOB VOSK_SRCS vosk_api/*.cpp vosk_api/*.h )
     add_executable(asr_server src/asr_server.cpp ${VOSK_SRCS})
@@ -83,3 +88,5 @@ if(Boost_FOUND)
     file(GLOB VOSK_DLLS "${CMAKE_CURRENT_SOURCE_DIR}/lib/*.dll")
     install(FILES ${VOSK_DLLS} DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif()
+
+
