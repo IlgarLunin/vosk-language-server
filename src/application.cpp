@@ -16,6 +16,10 @@ Application::Application(QWidget *parent)
     ui->setupUi(this);
     ui->leLog->setContextMenuPolicy(Qt::ActionsContextMenu);
 
+    recorder = std::make_shared<MicrophoneRecorder>([this](const sf::Int16 *samples, size_t sampleCount) {
+        onVoiceAvailable(samples, sampleCount);
+    });
+
     m_actionClearLog = new QAction(this);
     m_actionClearLog->setText("Clear");
     connect(m_actionClearLog, &QAction::triggered, this, &Application::onClearLog);
@@ -238,8 +242,8 @@ void Application::onFetchMicrophones()
 {
     QSignalBlocker blocker(ui->cbMicrophone);
 
-    // iterate in available microphones
-
+    for (const std::string &device : sf::SoundBufferRecorder::getAvailableDevices())
+        ui->cbMicrophone->addItem(device.c_str());
 
 }
 
@@ -254,15 +258,17 @@ void Application::onToggleRecording()
         recordingInProgress = false;
         ui->pbRecord->setText(QStringLiteral("Start recording"));
 
-
+        recorder->stop();
 
     } else {
-        // start recording
-        recordingInProgress = true;
-        ui->pbRecord->setText(QStringLiteral("Stop recording"));
+        if(sf::SoundBufferRecorder::isAvailable())
+        {
+            // start recording
+            recordingInProgress = true;
+            ui->pbRecord->setText(QStringLiteral("Stop recording"));
 
-
-
+            recorder->start(ui->sampleRateSpinBox->value());
+        }
     }
 }
 
@@ -296,7 +302,7 @@ void Application::syncUIWithRecordingState()
                               QStringLiteral("Stop recording") :
                               QStringLiteral("Start recording"));
 
-    bool microphoneAvailable = QMediaDevices::audioInputs().count() > 0;
+    bool microphoneAvailable = sf::SoundBufferRecorder::getAvailableDevices().size() > 0;
 
     ui->pbRecord->setEnabled(microphoneAvailable /*&& isRunning()*/ );
 }
@@ -310,5 +316,10 @@ bool Application::getCurrentMicrophone()
     }
 
     return false;
+}
+
+void Application::onVoiceAvailable(const sf::Int16 *samples, size_t sampleCount)
+{
+    qDebug() << sampleCount << "samples recorded";
 }
 

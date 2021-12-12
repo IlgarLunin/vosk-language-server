@@ -6,6 +6,9 @@
 #include <QTimer>
 #include <QSystemTrayIcon>
 
+#include "recorder.h"
+
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class Application; }
 QT_END_NAMESPACE
@@ -49,6 +52,7 @@ private:
     void syncUIWithProcessState();
     void syncUIWithRecordingState();
     bool getCurrentMicrophone();
+    void onVoiceAvailable(const sf::Int16 *samples, size_t sampleCount);
 
 private:
     Ui::Application *ui;
@@ -58,6 +62,8 @@ private:
     QAction* m_QuitAction;
     QTimer m_hearbeatTimer;
     QSystemTrayIcon* trayIcon;
+
+    MicrophoneRecorder::Pointer recorder = nullptr;
     bool recordingInProgress = false;
 
 };
