@@ -14,8 +14,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ###################### GUI ######################
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets Multimedia REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets Multimedia REQUIRED)
 
 set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/resources/winresources.rc")
 
@@ -29,19 +29,24 @@ set(PROJECT_SOURCES
 )
 
 # add resources
-qt5_add_resources(PROJECT_SOURCES resources/resources.qrc)
+if(QT_VERSION_MAJOR EQUAL 6)
+    qt_add_resources(PROJECT_SOURCES resources/resources.qrc)
+else()
+    qt5_add_resources(PROJECT_SOURCES resources/resources.qrc)
+endif()
+
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(vls
+    qt_add_executable(vls WIN32
         MANUAL_FINALIZATION
-        ${PROJECT_SOURCES}
+        ${PROJECT_SOURCES} ${APP_ICON_RESOURCE_WINDOWS}
     )
 else()
     add_executable(vls WIN32 ${PROJECT_SOURCES} ${APP_ICON_RESOURCE_WINDOWS}
     )
 endif()
 
-target_link_libraries(vls PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(vls PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Multimedia)
 target_include_directories(vls PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 

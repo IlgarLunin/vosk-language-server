@@ -1,6 +1,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QSettings>
+#include <QSignalBlocker>
 #include <QDesktopServices>
 
 #include "application.h"
@@ -17,11 +18,11 @@ Application::Application(QWidget *parent)
 
     m_actionClearLog = new QAction(this);
     m_actionClearLog->setText("Clear");
-    connect(m_actionClearLog, &QAction::triggered, this, &Application::on_clearLog);
+    connect(m_actionClearLog, &QAction::triggered, this, &Application::onClearLog);
     ui->leLog->addAction(m_actionClearLog);
 
     m_hearbeatTimer.setInterval(1000);
-    connect(&m_hearbeatTimer, &QTimer::timeout, this, &Application::on_hearBeat);
+    connect(&m_hearbeatTimer, &QTimer::timeout, this, &Application::onHearBeat);
     m_hearbeatTimer.start(1000);
 
     syncUIWithProcessState();
@@ -33,10 +34,10 @@ Application::Application(QWidget *parent)
     trayIconMenu->addAction(m_QuitAction);
     connect(m_QuitAction, &QAction::triggered, this, &Application::onQuit);
     connect(ui->actionExit, &QAction::triggered, this, &Application::onQuit);
-    connect(ui->actionDownload_models, &QAction::triggered, this, &Application::on_downloadModels);
+    connect(ui->actionDownload_models, &QAction::triggered, this, &Application::onDownloadModels);
 
     trayIcon = new QSystemTrayIcon(this);
-    connect(trayIcon, &QSystemTrayIcon::activated, this, &Application::on_trayIconActivated);
+    connect(trayIcon, &QSystemTrayIcon::activated, this, &Application::onTrayIconActivated);
     trayIcon->setIcon(QIcon(":/icon.ico"));
     trayIcon->setContextMenu(trayIconMenu);
     trayIcon->show();
@@ -44,13 +45,21 @@ Application::Application(QWidget *parent)
     setWindowTitle(QString("Vosk Language Server %1.%2").arg(VLS::VLS_VERSION_MAJOR).arg(VLS::VLS_VERSION_MINOR));
 
     readSettings();
-    connect(trayIcon, &QSystemTrayIcon::messageClicked, this, &Application::on_trayMessageClicked);
+    connect(trayIcon, &QSystemTrayIcon::messageClicked, this, &Application::onTrayMessageClicked);
     trayIcon->showMessage("", "Vls is running in background", QSystemTrayIcon::NoIcon, 300);
 
     if(ui->autoStartCheckBox->isChecked())
     {
-        on_pbStart_clicked();
+        onStartClicked();
     }
+
+    connect(ui->pbFetchMicrophones, &QPushButton::clicked, this, &Application::onFetchMicrophones);
+    onFetchMicrophones();
+
+    connect(ui->pbRecord, &QPushButton::clicked, this, &Application::onToggleRecording);
+    connect(ui->pbStart, &QPushButton::clicked, this, &Application::onStartClicked);
+    connect(ui->pbStop, &QPushButton::clicked, this, &Application::onStopClicked);
+
 
 }
 
@@ -107,17 +116,17 @@ void Application::readSettings()
 }
 
 
-void Application::on_pbStart_clicked()
+void Application::onStartClicked()
 {
     if(!isRunning())
     {
         m_currentProcess = new QProcess(this);
 
         m_currentProcess->setWorkingDirectory(QApplication::applicationDirPath());
-        connect(m_currentProcess, &QProcess::stateChanged, this, &Application::on_processStateChanged);
-        connect(m_currentProcess, &QProcess::errorOccurred, this, &Application::on_processErrorOccurred);
-        connect(m_currentProcess, &QProcess::readyReadStandardOutput, this, &Application::on_readyReadStandardOutput);
-        connect(m_currentProcess, &QProcess::readyReadStandardError, this, &Application::on_readyReadStandardError);
+        connect(m_currentProcess, &QProcess::stateChanged, this, &Application::onProcessStateChanged);
+        connect(m_currentProcess, &QProcess::errorOccurred, this, &Application::onProcessErrorOccurred);
+        connect(m_currentProcess, &QProcess::readyReadStandardOutput, this, &Application::onReadyReadStandardOutput);
+        connect(m_currentProcess, &QProcess::readyReadStandardError, this, &Application::onReadyReadStandardError);
 
         QStringList args;
         args << "-a" << ui->addressLineEdit->text();
@@ -128,15 +137,17 @@ void Application::on_pbStart_clicked()
         args << "-w" << QString("%1").arg(ui->showWordsCheckBox->isChecked());
         args << "-m" << QDir::toNativeSeparators(ui->modelPathLineEdit->text());
 
-        m_currentProcess->setProgram("asr_server.exe");
+        m_currentProcess->setProgram(QStringLiteral("asr_server.exe"));
         m_currentProcess->setArguments(args);
         m_currentProcess->start();
 
+    } else {
+        qDebug() << "asr_server is not running";
     }
     syncUIWithProcessState();
 }
 
-void Application::on_pbStop_clicked()
+void Application::onStopClicked()
 {
     if(isRunning())
     {
@@ -148,42 +159,43 @@ void Application::on_pbStop_clicked()
     }
 }
 
-void Application::on_downloadModels()
+void Application::onDownloadModels()
 {
     QDesktopServices::openUrl(QUrl("https://alphacephei.com/vosk/models"));
 }
 
-void Application::on_processErrorOccurred(QProcess::ProcessError err)
+void Application::onProcessErrorOccurred(QProcess::ProcessError err)
 {
 
 }
 
-void Application::on_processStateChanged(QProcess::ProcessState st)
+void Application::onProcessStateChanged(QProcess::ProcessState st)
 {
 
 }
 
-void Application::on_readyReadStandardOutput()
+void Application::onReadyReadStandardOutput()
 {
     QString out = m_currentProcess->readAllStandardOutput();
     ui->leLog->appendPlainText(out);
 }
 
-void Application::on_readyReadStandardError()
+void Application::onReadyReadStandardError()
 {
     QString out = m_currentProcess->readAllStandardError();
     ui->leLog->appendPlainText(out);
 }
 
-void Application::on_clearLog()
+void Application::onClearLog()
 {
     ui->leLog->clear();
 }
 
 
-void Application::on_hearBeat()
+void Application::onHearBeat()
 {
     syncUIWithProcessState();
+    syncUIWithRecordingState();
 }
 
 void Application::closeEvent(QCloseEvent *event)
@@ -201,7 +213,7 @@ void Application::closeEvent(QCloseEvent *event)
     }
 }
 
-void Application::on_trayIconActivated(QSystemTrayIcon::ActivationReason reason)
+void Application::onTrayIconActivated(QSystemTrayIcon::ActivationReason reason)
 {
     switch (reason)
         {
@@ -216,10 +228,42 @@ void Application::on_trayIconActivated(QSystemTrayIcon::ActivationReason reason)
     }
 }
 
-void Application::on_trayMessageClicked()
+void Application::onTrayMessageClicked()
 {
     showNormal();
     activateWindow();
+}
+
+void Application::onFetchMicrophones()
+{
+    QSignalBlocker blocker(ui->cbMicrophone);
+
+    // iterate in available microphones
+
+
+}
+
+void Application::onToggleRecording()
+{
+    if (!getCurrentMicrophone())
+        return;
+
+    if (recordingInProgress)
+    {
+        // shutdown recording
+        recordingInProgress = false;
+        ui->pbRecord->setText(QStringLiteral("Start recording"));
+
+
+
+    } else {
+        // start recording
+        recordingInProgress = true;
+        ui->pbRecord->setText(QStringLiteral("Stop recording"));
+
+
+
+    }
 }
 
 void Application::onQuit()
@@ -244,5 +288,27 @@ void Application::syncUIWithProcessState()
     };
 
     enable_disable_widgets(isRunning());
+}
+
+void Application::syncUIWithRecordingState()
+{
+    ui->pbRecord->setText(recordingInProgress ?
+                              QStringLiteral("Stop recording") :
+                              QStringLiteral("Start recording"));
+
+    bool microphoneAvailable = QMediaDevices::audioInputs().count() > 0;
+
+    ui->pbRecord->setEnabled(microphoneAvailable /*&& isRunning()*/ );
+}
+
+bool Application::getCurrentMicrophone()
+{
+    if (ui->cbMicrophone->count() > 0)
+    {
+
+        return true;
+    }
+
+    return false;
 }
 

@@ -5,6 +5,7 @@
 #include <QFile>
 #include "vls_common.h"
 
+
 int main(int argc, char *argv[])
 {
     QApplication::setOrganizationName("Alphacephei");
