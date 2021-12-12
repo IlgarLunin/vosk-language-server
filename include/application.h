@@ -51,7 +51,7 @@ private slots:
 private:
     void syncUIWithProcessState();
     void syncUIWithRecordingState();
-    bool getCurrentMicrophone();
+    QString getCurrentMicrophoneName();
     void onVoiceAvailable(const sf::Int16 *samples, size_t sampleCount);
 
 private:

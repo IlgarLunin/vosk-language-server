@@ -249,7 +249,8 @@ void Application::onFetchMicrophones()
 
 void Application::onToggleRecording()
 {
-    if (!getCurrentMicrophone())
+    QString currentMicrophoneName = getCurrentMicrophoneName();
+    if (currentMicrophoneName.isEmpty() || currentMicrophoneName.isNull())
         return;
 
     if (recordingInProgress)
@@ -266,7 +267,7 @@ void Application::onToggleRecording()
             // start recording
             recordingInProgress = true;
             ui->pbRecord->setText(QStringLiteral("Stop recording"));
-
+            recorder->setDevice(currentMicrophoneName.toStdString());
             recorder->start(ui->sampleRateSpinBox->value());
         }
     }
@@ -307,19 +308,19 @@ void Application::syncUIWithRecordingState()
     ui->pbRecord->setEnabled(microphoneAvailable /*&& isRunning()*/ );
 }
 
-bool Application::getCurrentMicrophone()
+QString Application::getCurrentMicrophoneName()
 {
     if (ui->cbMicrophone->count() > 0)
     {
-
-        return true;
+        return ui->cbMicrophone->currentText();
     }
 
-    return false;
+    return QString();
 }
 
 void Application::onVoiceAvailable(const sf::Int16 *samples, size_t sampleCount)
 {
+    // push buffer to vosk
     qDebug() << sampleCount << "samples recorded";
 }
 

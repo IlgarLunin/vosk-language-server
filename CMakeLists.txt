@@ -13,6 +13,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # sfml
+set(SFML_DEPENDENCIES_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 add_subdirectory(thirdparty/SFML)
 
 ###################### GUI ######################
