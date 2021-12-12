@@ -1,3 +1,6 @@
 [submodule "thirdparty/vosk-api"]
 	path = thirdparty/vosk-api
 	url = git@github.com:alphacep/vosk-api.git
+[submodule "thirdparty/portaudio"]
+	path = thirdparty/portaudio
+	url = git@github.com:PortAudio/portaudio.git

@@ -69,7 +69,7 @@ find_package(Boost 1.77.0 COMPONENTS date_time program_options REQUIRED)
 
 
 if(Boost_FOUND)
-    file(GLOB VOSK_SRCS vosk_api/*.cpp vosk_api/*.h )
+    file(GLOB VOSK_SRCS thirdparty/vosk_api/*.cpp thirdparty/vosk_api/*.h )
     add_executable(asr_server src/asr_server.cpp ${VOSK_SRCS})
 
     target_include_directories(
