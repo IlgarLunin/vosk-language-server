@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QSystemTrayIcon>
 #include <QtWebSockets/QWebSocket>
+#include <QAudioInput>
 
 
 QT_BEGIN_NAMESPACE
@@ -63,6 +64,9 @@ private:
     QAction* m_QuitAction;
     QTimer m_hearbeatTimer;
     QSystemTrayIcon* trayIcon;
+
+    QAudioInput* audioInput = nullptr;
+    QIODevice* audioIO = nullptr;
 
     QWebSocket* socket = nullptr;
     bool recordingInProgress = false;

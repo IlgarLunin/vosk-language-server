@@ -4,8 +4,8 @@
 #include <QSettings>
 #include <QSignalBlocker>
 #include <QDesktopServices>
-#include <QAudioInput>
 #include <QAudioDeviceInfo>
+#include <QAudioFormat>
 
 #include "application.h"
 #include "vls_common.h"
@@ -272,6 +272,7 @@ void Application::onToggleRecording()
         ui->pbRecord->setText(QStringLiteral("Start recording"));
 
         socket->close();
+        audioIO->close();
 
     } else {
         if(QAudioDeviceInfo::availableDevices(QAudio::AudioInput).size() > 0)
@@ -280,6 +281,11 @@ void Application::onToggleRecording()
             recordingInProgress = true;
             ui->pbRecord->setText(QStringLiteral("Stop recording"));
 
+            QAudioFormat format;
+            format.setSampleRate(ui->sampleRateSpinBox->value());
+            format.setChannelCount(1);
+            audioInput = new QAudioInput(format, this);
+            audioIO = audioInput->start();
 
         }
     }
