@@ -12,14 +12,10 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# sfml
-set(SFML_DEPENDENCIES_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-add_subdirectory(thirdparty/SFML)
-
 ###################### GUI ######################
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets Multimedia REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets Multimedia REQUIRED)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets WebSockets Multimedia REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets WebSockets Multimedia REQUIRED)
 
 set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/resources/winresources.rc")
 
@@ -28,11 +24,9 @@ set(PROJECT_SOURCES
     main.cpp
     src/application.ui
     src/vls_common.cpp
-    src/recorder.cpp
     src/application.cpp
     include/application.h
     include/vls_common.h
-    include/recorder.h
 )
 
 # add resources
@@ -53,8 +47,12 @@ else()
     )
 endif()
 
-target_link_libraries(vls PRIVATE Qt${QT_VERSION_MAJOR}::Widgets sfml-audio)
-target_include_directories(vls PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SFML/include")
+target_link_libraries(vls PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::WebSockets
+    Qt${QT_VERSION_MAJOR}::Multimedia
+)
+target_include_directories(vls PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 
 if(QT_VERSION_MAJOR EQUAL 6)

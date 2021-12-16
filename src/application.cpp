@@ -1,8 +1,11 @@
 #include <QDebug>
 #include <QDir>
+#include <QThread>
 #include <QSettings>
 #include <QSignalBlocker>
 #include <QDesktopServices>
+#include <QAudioInput>
+#include <QAudioDeviceInfo>
 
 #include "application.h"
 #include "vls_common.h"
@@ -16,9 +19,7 @@ Application::Application(QWidget *parent)
     ui->setupUi(this);
     ui->leLog->setContextMenuPolicy(Qt::ActionsContextMenu);
 
-    recorder = std::make_shared<MicrophoneRecorder>([this](const sf::Int16 *samples, size_t sampleCount) {
-        onVoiceAvailable(samples, sampleCount);
-    });
+    socket = new QWebSocket(QString(), QWebSocketProtocol::VersionLatest, this);
 
     m_actionClearLog = new QAction(this);
     m_actionClearLog->setText("Clear");
@@ -64,6 +65,9 @@ Application::Application(QWidget *parent)
     connect(ui->pbStart, &QPushButton::clicked, this, &Application::onStartClicked);
     connect(ui->pbStop, &QPushButton::clicked, this, &Application::onStopClicked);
 
+    connect(socket, &QWebSocket::stateChanged, this, &Application::onSocketStateChanged, Qt::QueuedConnection);
+    connect(socket, &QWebSocket::textMessageReceived, this, &Application::onTextMessageReceived, Qt::QueuedConnection);
+    connect(socket, &QWebSocket::binaryMessageReceived, this, &Application::onBinaryMessageReceived, Qt::QueuedConnection);
 
 }
 
@@ -153,6 +157,11 @@ void Application::onStartClicked()
 
 void Application::onStopClicked()
 {
+    if (recordingInProgress)
+    {
+        onToggleRecording();
+    }
+
     if(isRunning())
     {
         m_currentProcess->disconnect();
@@ -242,8 +251,11 @@ void Application::onFetchMicrophones()
 {
     QSignalBlocker blocker(ui->cbMicrophone);
 
-    for (const std::string &device : sf::SoundBufferRecorder::getAvailableDevices())
-        ui->cbMicrophone->addItem(device.c_str());
+    ui->cbMicrophone->clear();
+
+    // fetch microphones
+    foreach (QAudioDeviceInfo info, QAudioDeviceInfo::availableDevices(QAudio::Mode::AudioInput))
+        ui->cbMicrophone->addItem(info.deviceName());
 
 }
 
@@ -259,18 +271,33 @@ void Application::onToggleRecording()
         recordingInProgress = false;
         ui->pbRecord->setText(QStringLiteral("Start recording"));
 
-        recorder->stop();
+        socket->close();
 
     } else {
-        if(sf::SoundBufferRecorder::isAvailable())
+        if(QAudioDeviceInfo::availableDevices(QAudio::AudioInput).size() > 0)
         {
             // start recording
             recordingInProgress = true;
             ui->pbRecord->setText(QStringLiteral("Stop recording"));
-            recorder->setDevice(currentMicrophoneName.toStdString());
-            recorder->start(ui->sampleRateSpinBox->value());
+
+
         }
     }
+}
+
+void Application::onTextMessageReceived(const QString &message)
+{
+    ui->pteTextOutput->appendPlainText(message);
+}
+
+void Application::onBinaryMessageReceived(const QByteArray &message)
+{
+    qDebug() << "RECEIVED BIN:" << message;
+}
+
+void Application::onSocketStateChanged(QAbstractSocket::SocketState state)
+{
+    qDebug() << "Socket State:" << state;
 }
 
 void Application::onQuit()
@@ -303,9 +330,9 @@ void Application::syncUIWithRecordingState()
                               QStringLiteral("Stop recording") :
                               QStringLiteral("Start recording"));
 
-    bool microphoneAvailable = sf::SoundBufferRecorder::getAvailableDevices().size() > 0;
+    bool microphoneAvailable = false;
 
-    ui->pbRecord->setEnabled(microphoneAvailable /*&& isRunning()*/ );
+    ui->pbRecord->setEnabled(microphoneAvailable /*&& isRunning()*/);
 }
 
 QString Application::getCurrentMicrophoneName()
@@ -318,9 +345,5 @@ QString Application::getCurrentMicrophoneName()
     return QString();
 }
 
-void Application::onVoiceAvailable(const sf::Int16 *samples, size_t sampleCount)
-{
-    // push buffer to vosk
-    qDebug() << sampleCount << "samples recorded";
-}
+
 

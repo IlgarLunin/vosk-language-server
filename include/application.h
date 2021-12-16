@@ -5,8 +5,7 @@
 #include <QProcess>
 #include <QTimer>
 #include <QSystemTrayIcon>
-
-#include "recorder.h"
+#include <QtWebSockets/QWebSocket>
 
 
 QT_BEGIN_NAMESPACE
@@ -45,6 +44,9 @@ private slots:
     void onFetchMicrophones();
 
     void onToggleRecording();
+    void onTextMessageReceived(const QString& message);
+    void onBinaryMessageReceived(const QByteArray& message);
+    void onSocketStateChanged(QAbstractSocket::SocketState state);
 
     void onQuit();
 
@@ -52,7 +54,6 @@ private:
     void syncUIWithProcessState();
     void syncUIWithRecordingState();
     QString getCurrentMicrophoneName();
-    void onVoiceAvailable(const sf::Int16 *samples, size_t sampleCount);
 
 private:
     Ui::Application *ui;
@@ -63,7 +64,6 @@ private:
     QTimer m_hearbeatTimer;
     QSystemTrayIcon* trayIcon;
 
-    MicrophoneRecorder::Pointer recorder = nullptr;
+    QWebSocket* socket = nullptr;
     bool recordingInProgress = false;
-
 };
