@@ -330,7 +330,7 @@ void Application::syncUIWithRecordingState()
                               QStringLiteral("Stop recording") :
                               QStringLiteral("Start recording"));
 
-    bool microphoneAvailable = false;
+    bool microphoneAvailable = QAudioDeviceInfo::availableDevices(QAudio::AudioInput).size() > 0;
 
     ui->pbRecord->setEnabled(microphoneAvailable /*&& isRunning()*/);
 }
