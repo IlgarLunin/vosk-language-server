@@ -78,6 +78,7 @@ Application::Application(QWidget *parent)
     connect(&silenceDetectionTimer, &QTimer::timeout, this, &Application::onStoppedTalking);
 
     connect(ui->pbPickFolder, &QPushButton::clicked, this, &Application::onPickModelPath);
+    ui->modelPathLineEdit->setReadOnly(true);
 
 }
 
