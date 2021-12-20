@@ -6,6 +6,8 @@
 #include <QDesktopServices>
 #include <QAudioDeviceInfo>
 #include <QAudioFormat>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 #include "application.h"
 #include "vls_common.h"
@@ -68,6 +70,11 @@ Application::Application(QWidget *parent)
     connect(socket, &QWebSocket::stateChanged, this, &Application::onSocketStateChanged, Qt::QueuedConnection);
     connect(socket, &QWebSocket::textMessageReceived, this, &Application::onTextMessageReceived, Qt::QueuedConnection);
     connect(socket, &QWebSocket::binaryMessageReceived, this, &Application::onBinaryMessageReceived, Qt::QueuedConnection);
+
+    silenceDetectionTimer.setParent(this);
+    silenceDetectionTimer.setSingleShot(true);
+    silenceDetectionTimer.setInterval(650);
+    connect(&silenceDetectionTimer, &QTimer::timeout, this, &Application::onStoppedTalking);
 
 }
 
@@ -254,8 +261,10 @@ void Application::onFetchMicrophones()
     ui->cbMicrophone->clear();
 
     // fetch microphones
-    foreach (QAudioDeviceInfo info, QAudioDeviceInfo::availableDevices(QAudio::Mode::AudioInput))
+    foreach (const QAudioDeviceInfo& info, QAudioDeviceInfo::availableDevices(QAudio::Mode::AudioInput))
+    {
         ui->cbMicrophone->addItem(info.deviceName());
+    }
 
 }
 
@@ -272,20 +281,50 @@ void Application::onToggleRecording()
         ui->pbRecord->setText(QStringLiteral("Start recording"));
 
         socket->close();
-        audioIO->close();
+        audioIO->stop();
 
     } else {
         if(QAudioDeviceInfo::availableDevices(QAudio::AudioInput).size() > 0)
         {
             // start recording
-            recordingInProgress = true;
-            ui->pbRecord->setText(QStringLiteral("Stop recording"));
 
             QAudioFormat format;
-            format.setSampleRate(ui->sampleRateSpinBox->value());
+            format.setSampleRate(8000);
             format.setChannelCount(1);
-            audioInput = new QAudioInput(format, this);
-            audioIO = audioInput->start();
+            format.setSampleSize(16);
+            format.setSampleType(QAudioFormat::SignedInt);
+            format.setByteOrder(QAudioFormat::LittleEndian);
+            format.setCodec("audio/pcm");
+
+            foreach (const QAudioDeviceInfo& info, QAudioDeviceInfo::availableDevices(QAudio::AudioInput))
+            {
+                if (info.deviceName() == currentMicrophoneName)
+                {
+                    if (!info.isFormatSupported(format))
+                        format = info.nearestFormat(format);
+                    break;
+                }
+            }
+
+            QString url = QString::asprintf("ws://%s:%d",
+                              ui->addressLineEdit->text().toStdString().c_str(),
+                              ui->portSpinBox->value());
+            socket->open(QUrl(url));
+
+            audioInput = new QAudioInput(QAudioDeviceInfo::defaultInputDevice(), format, this);
+            audioIO.reset(new MicrophoneAudioDevice(format, [this](const char *data, qint64 len, qreal level) {
+                QByteArray buffer(data, len);
+                socket->sendBinaryMessage(buffer);
+                if (level > 0.003)
+                {
+                    silenceDetectionTimer.start();
+                }
+            }));
+
+            recordingInProgress = true;
+            audioIO->start();
+            audioInput->start(audioIO.data());
+            ui->pbRecord->setText(QStringLiteral("Stop recording"));
 
         }
     }
@@ -293,18 +332,58 @@ void Application::onToggleRecording()
 
 void Application::onTextMessageReceived(const QString &message)
 {
-    ui->pteTextOutput->appendPlainText(message);
+    QJsonParseError err;
+    QByteArray ba(message.toStdString().c_str());
+    QJsonDocument json = QJsonDocument::fromJson(ba, &err);
+
+    if (err.error == QJsonParseError::NoError)
+    {
+        QJsonObject obj = json.object();
+        // find partial
+        auto itPartial = obj.find(QStringLiteral("partial"));
+        if (itPartial != obj.end())
+        {
+            QString text = obj.value(QStringLiteral("partial")).toString();
+            if (text.isEmpty()) return;
+
+            ui->tePartialResult->setPlainText(text);
+            return;
+        }
+
+        // find final
+        auto it = obj.find(QStringLiteral("text"));
+        if (it != obj.end())
+        {
+            QString text = obj.value(QStringLiteral("text")).toString();
+            if (text.isEmpty()) return;
+
+            ui->teFinalResult->setPlainText(text);
+            return;
+        }
+
+    } else {
+        QString r = err.errorString();
+        r += "\n";
+        r += message;
+        ui->tePartialResult->setPlainText(r);
+    }
 }
 
 void Application::onBinaryMessageReceived(const QByteArray &message)
 {
-    qDebug() << "RECEIVED BIN:" << message;
+
 }
 
 void Application::onSocketStateChanged(QAbstractSocket::SocketState state)
 {
-    qDebug() << "Socket State:" << state;
+
 }
+
+void Application::onStoppedTalking()
+{
+    // socket->sendTextMessage("{\"eof\" : 1}");
+}
+
 
 void Application::onQuit()
 {

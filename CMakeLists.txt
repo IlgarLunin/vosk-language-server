@@ -25,7 +25,9 @@ set(PROJECT_SOURCES
     src/application.ui
     src/vls_common.cpp
     src/application.cpp
+    src/microphoneaudiodevice.cpp
     include/application.h
+    include/microphoneaudiodevice.h
     include/vls_common.h
 )
 

@@ -2,11 +2,13 @@
 
 #include <QMainWindow>
 #include <QPointer>
+#include <QScopedPointer>
 #include <QProcess>
 #include <QTimer>
 #include <QSystemTrayIcon>
 #include <QtWebSockets/QWebSocket>
 #include <QAudioInput>
+#include "microphoneaudiodevice.h"
 
 
 QT_BEGIN_NAMESPACE
@@ -49,6 +51,8 @@ private slots:
     void onBinaryMessageReceived(const QByteArray& message);
     void onSocketStateChanged(QAbstractSocket::SocketState state);
 
+    void onStoppedTalking();
+
     void onQuit();
 
 private:
@@ -66,8 +70,9 @@ private:
     QSystemTrayIcon* trayIcon;
 
     QAudioInput* audioInput = nullptr;
-    QIODevice* audioIO = nullptr;
+    QScopedPointer<MicrophoneAudioDevice> audioIO;
 
     QWebSocket* socket = nullptr;
     bool recordingInProgress = false;
+    QTimer silenceDetectionTimer;
 };

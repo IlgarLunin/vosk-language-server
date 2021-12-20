@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>421</width>
-    <height>474</height>
+    <width>603</width>
+    <height>678</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,7 +25,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -70,7 +70,7 @@
                   <string>Server address</string>
                  </property>
                  <property name="text">
-                  <string>0.0.0.0</string>
+                  <string>localhost</string>
                  </property>
                 </widget>
                </item>
@@ -287,12 +287,26 @@
           <item>
            <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>Text output</string>
+             <string>Partial result</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPlainTextEdit" name="pteTextOutput">
+           <widget class="QPlainTextEdit" name="tePartialResult">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>Final result</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPlainTextEdit" name="teFinalResult">
             <property name="readOnly">
              <bool>true</bool>
             </property>
@@ -319,7 +333,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>421</width>
+     <width>603</width>
      <height>21</height>
     </rect>
    </property>
