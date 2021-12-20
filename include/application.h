@@ -53,6 +53,8 @@ private slots:
 
     void onStoppedTalking();
 
+    void onPickModelPath();
+
     void onQuit();
 
 private:

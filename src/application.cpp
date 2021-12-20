@@ -8,6 +8,7 @@
 #include <QAudioFormat>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QFileDialog>
 
 #include "application.h"
 #include "vls_common.h"
@@ -75,6 +76,8 @@ Application::Application(QWidget *parent)
     silenceDetectionTimer.setSingleShot(true);
     silenceDetectionTimer.setInterval(650);
     connect(&silenceDetectionTimer, &QTimer::timeout, this, &Application::onStoppedTalking);
+
+    connect(ui->pbPickFolder, &QPushButton::clicked, this, &Application::onPickModelPath);
 
 }
 
@@ -261,9 +264,12 @@ void Application::onFetchMicrophones()
     ui->cbMicrophone->clear();
 
     // fetch microphones
+    QStringList devices;
     foreach (const QAudioDeviceInfo& info, QAudioDeviceInfo::availableDevices(QAudio::Mode::AudioInput))
     {
+        if (devices.contains(info.deviceName())) continue;
         ui->cbMicrophone->addItem(info.deviceName());
+        devices << info.deviceName();
     }
 
 }
@@ -296,12 +302,14 @@ void Application::onToggleRecording()
             format.setByteOrder(QAudioFormat::LittleEndian);
             format.setCodec("audio/pcm");
 
+            QAudioDeviceInfo currentDevice;
             foreach (const QAudioDeviceInfo& info, QAudioDeviceInfo::availableDevices(QAudio::AudioInput))
             {
                 if (info.deviceName() == currentMicrophoneName)
                 {
                     if (!info.isFormatSupported(format))
                         format = info.nearestFormat(format);
+                    currentDevice = info;
                     break;
                 }
             }
@@ -311,7 +319,7 @@ void Application::onToggleRecording()
                               ui->portSpinBox->value());
             socket->open(QUrl(url));
 
-            audioInput = new QAudioInput(QAudioDeviceInfo::defaultInputDevice(), format, this);
+            audioInput = new QAudioInput(currentDevice, format, this);
             audioIO.reset(new MicrophoneAudioDevice(format, [this](const char *data, qint64 len, qreal level) {
                 QByteArray buffer(data, len);
                 socket->sendBinaryMessage(buffer);
@@ -384,6 +392,17 @@ void Application::onStoppedTalking()
     // socket->sendTextMessage("{\"eof\" : 1}");
 }
 
+void Application::onPickModelPath()
+{
+    QString directory = QFileDialog::getExistingDirectory(
+                this,
+                "Pick model directory",
+                QString(),
+                QFileDialog::ShowDirsOnly
+                );
+    ui->modelPathLineEdit->setText(directory.trimmed());
+}
+
 
 void Application::onQuit()
 {
@@ -417,7 +436,7 @@ void Application::syncUIWithRecordingState()
 
     bool microphoneAvailable = QAudioDeviceInfo::availableDevices(QAudio::AudioInput).size() > 0;
 
-    ui->pbRecord->setEnabled(microphoneAvailable /*&& isRunning()*/);
+    ui->pbRecord->setEnabled(microphoneAvailable && isRunning());
 }
 
 QString Application::getCurrentMicrophoneName()
