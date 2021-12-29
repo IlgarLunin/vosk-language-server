@@ -76,5 +76,4 @@ private:
 
     QWebSocket* socket = nullptr;
     bool recordingInProgress = false;
-    QTimer silenceDetectionTimer;
 };

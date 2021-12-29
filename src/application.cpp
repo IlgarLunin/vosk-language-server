@@ -72,11 +72,6 @@ Application::Application(QWidget *parent)
     connect(socket, &QWebSocket::textMessageReceived, this, &Application::onTextMessageReceived, Qt::QueuedConnection);
     connect(socket, &QWebSocket::binaryMessageReceived, this, &Application::onBinaryMessageReceived, Qt::QueuedConnection);
 
-    silenceDetectionTimer.setParent(this);
-    silenceDetectionTimer.setSingleShot(true);
-    silenceDetectionTimer.setInterval(650);
-    connect(&silenceDetectionTimer, &QTimer::timeout, this, &Application::onStoppedTalking);
-
     connect(ui->pbPickFolder, &QPushButton::clicked, this, &Application::onPickModelPath);
     ui->modelPathLineEdit->setReadOnly(true);
 
@@ -296,7 +291,7 @@ void Application::onToggleRecording()
             // start recording
 
             QAudioFormat format;
-            format.setSampleRate(8000);
+            format.setSampleRate(16000);
             format.setChannelCount(1);
             format.setSampleSize(16);
             format.setSampleType(QAudioFormat::SignedInt);
@@ -324,10 +319,6 @@ void Application::onToggleRecording()
             audioIO.reset(new MicrophoneAudioDevice(format, [this](const char *data, qint64 len, qreal level) {
                 QByteArray buffer(data, len);
                 socket->sendBinaryMessage(buffer);
-                if (level > 0.003)
-                {
-                    silenceDetectionTimer.start();
-                }
             }));
 
             recordingInProgress = true;
