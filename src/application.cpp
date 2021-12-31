@@ -116,7 +116,7 @@ void Application::readSettings()
                        QApplication::organizationName(),
                        QApplication::applicationName());
 
-    ui->addressLineEdit->setText(settings.value("address", "0.0.0.0").toString());
+    ui->addressLineEdit->setText(settings.value("address", "localhost").toString());
     ui->portSpinBox->setValue(settings.value("port", 8080).toInt());
     ui->sampleRateSpinBox->setValue(settings.value("sample_rate", 16000).toInt());
     ui->numThreadsSpinBox->setValue(settings.value("threads", 1).toInt());
@@ -291,7 +291,7 @@ void Application::onToggleRecording()
             // start recording
 
             QAudioFormat format;
-            format.setSampleRate(16000);
+            format.setSampleRate(ui->sampleRateSpinBox->value());
             format.setChannelCount(1);
             format.setSampleSize(16);
             format.setSampleType(QAudioFormat::SignedInt);
