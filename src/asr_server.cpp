@@ -164,6 +164,11 @@ public:
 
         const char *buf = boost::asio::buffer_cast<const char *>(buffer_.cdata());
         int len = static_cast<int>(buffer_.size());
+
+        std::string s_message(buf);
+        if (s_message.find("__reset_recognizer__") != std::string::npos)
+            vosk_recognizer_reset(rec_);
+
         chunk_ = process_chunk(buf, len);
 
         ws_.text(ws_.got_binary());
