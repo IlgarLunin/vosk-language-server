@@ -31,6 +31,9 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 //------------------------------------------------------------------------------
 static VoskModel *model;
 
+// custom messages
+const char* FINAL_RESULT_REQUEST_MESSAGE = "__final_result_request__";
+const char* RESET_RECOGNIZER_MESSAGE = "__reset_recognizer__";
 
 struct Args
 {
@@ -52,7 +55,6 @@ class session : public std::enable_shared_from_this<session>
     struct Chunk
     {
         std::string_view result;
-        bool stop = false;
     };
 
     websocket::stream<beast::tcp_stream> ws_;
@@ -136,17 +138,21 @@ public:
 
     Chunk process_chunk(const char *message, int len)
     {
-        if (strcmp(message, "{\"eof\" : 1}") == 0)
-        {
-            return Chunk{vosk_recognizer_final_result(rec_), true};
+        std::string s_message(message);
+        if (s_message.find(RESET_RECOGNIZER_MESSAGE) != std::string::npos) {
+            vosk_recognizer_reset(rec_);
+            return Chunk{};
         }
-        else if (vosk_recognizer_accept_waveform(rec_, message, len))
-        {
-            return Chunk{vosk_recognizer_result(rec_), false};
-        }
-        else
-        {
-            return Chunk{vosk_recognizer_partial_result(rec_), false};
+
+        std::string in_str(message);
+        std::string pattern(FINAL_RESULT_REQUEST_MESSAGE);
+
+        if (in_str.find(pattern) != std::string::npos) {
+            return Chunk{ vosk_recognizer_final_result(rec_) };
+        } else if (vosk_recognizer_accept_waveform(rec_, message, len)) {
+            return Chunk{vosk_recognizer_result(rec_)};
+        } else {
+            return Chunk{vosk_recognizer_partial_result(rec_)};
         }
     }
 
@@ -164,10 +170,6 @@ public:
 
         const char *buf = boost::asio::buffer_cast<const char *>(buffer_.cdata());
         int len = static_cast<int>(buffer_.size());
-
-        std::string s_message(buf);
-        if (s_message.find("__reset_recognizer__") != std::string::npos)
-            vosk_recognizer_reset(rec_);
 
         chunk_ = process_chunk(buf, len);
 
@@ -336,8 +338,6 @@ int main(int argc, char *argv[])
     net::io_context ioc {threads};
     // Create and launch a listening port
     std::make_shared<listener>(ioc, tcp::endpoint{net::ip::make_address(_address), (unsigned short)port}, args)->run();
-    // prevent event loop from exiting
-    // boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work = boost::asio::make_work_guard(ioc.get_executor());
 
     // Run the I/O service on the requested number of threads
     std::vector<std::thread> v;
