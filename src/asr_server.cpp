@@ -144,10 +144,18 @@ public:
             return Chunk{};
         }
 
-        std::string in_str(message);
-        std::string pattern(FINAL_RESULT_REQUEST_MESSAGE);
+        std::vector<std::string> final_result_message_options = {
+            FINAL_RESULT_REQUEST_MESSAGE,
+            "{\"eof\" : 1}"
+        };
 
-        if (in_str.find(pattern) != std::string::npos) {
+        const bool final_result_message_found = std::any_of(final_result_message_options.begin(),
+                                                      final_result_message_options.end(),
+            [&](const std::string& pattern) {
+                return s_message.find(pattern) != std::string::npos;
+            });
+
+        if (final_result_message_found) {
             return Chunk{ vosk_recognizer_final_result(rec_) };
         } else if (vosk_recognizer_accept_waveform(rec_, message, len)) {
             return Chunk{vosk_recognizer_result(rec_)};
