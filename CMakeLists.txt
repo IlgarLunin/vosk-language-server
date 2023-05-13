@@ -12,6 +12,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_compile_options(/bigobj)
+
 ###################### GUI ######################
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets WebSockets Multimedia REQUIRED)
@@ -37,7 +39,6 @@ if(QT_VERSION_MAJOR EQUAL 6)
 else()
     qt5_add_resources(PROJECT_SOURCES resources/resources.qrc)
 endif()
-
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(vls WIN32
@@ -72,7 +73,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${Boost_LIBRARY_DIR})
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.77.0 COMPONENTS date_time program_options REQUIRED)
+set(Boost_COMPILER "-vc143")
+find_package(Boost 1.82.0 REQUIRED COMPONENTS date_time program_options)
 
 
 if(Boost_FOUND)
@@ -83,13 +85,12 @@ if(Boost_FOUND)
         asr_server
         PRIVATE
         thirdparty/vosk_api
-        ${Boost_INCLUDE_DIR}
     )
 
     target_link_libraries(
         asr_server
-        ${Boost_LIBRARIES}
         ${CMAKE_CURRENT_SOURCE_DIR}/lib/libvosk.lib
+        Boost::date_time Boost::program_options
     )
     install(TARGETS asr_server RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
     file(GLOB VOSK_DLLS "${CMAKE_CURRENT_SOURCE_DIR}/lib/*.dll")

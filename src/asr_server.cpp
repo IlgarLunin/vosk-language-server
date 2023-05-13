@@ -35,6 +35,11 @@ static VoskModel *model;
 const char* FINAL_RESULT_REQUEST_MESSAGE = "__final_result_request__";
 const char* RESET_RECOGNIZER_MESSAGE = "__reset_recognizer__";
 
+static std::vector<std::string> final_result_message_options = {
+    FINAL_RESULT_REQUEST_MESSAGE,
+    "{\"eof\" : 1}"
+};
+
 struct Args
 {
     float sample_rate = 16000;
@@ -144,11 +149,6 @@ public:
             return Chunk{};
         }
 
-        std::vector<std::string> final_result_message_options = {
-            FINAL_RESULT_REQUEST_MESSAGE,
-            "{\"eof\" : 1}"
-        };
-
         const bool final_result_message_found = std::any_of(final_result_message_options.begin(),
                                                       final_result_message_options.end(),
             [&](const std::string& pattern) {
@@ -181,7 +181,7 @@ public:
 
         chunk_ = process_chunk(buf, len);
 
-        ws_.text(ws_.got_binary());
+        ws_.text(true);
 
         ws_.async_write(
             boost::asio::const_buffer(chunk_.result.data(), chunk_.result.size()),
